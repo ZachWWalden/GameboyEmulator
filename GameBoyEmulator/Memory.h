@@ -55,7 +55,7 @@ Memory::Memory(fstream &romFile, fstream &bootRom)
 
 	uint8_t fileReadIn = 0x00000000;
 	int PCess = 0;
-	while ((romFile.read(&fileReadIn, sizeof(uint8_t))))
+	while ((romFile.read(reinterpret_cast<char*>(&fileReadIn), sizeof(uint8_t))))
 	{
 		this->cartridgeRom[PCess] = fileReadIn;
 		PCess++;
@@ -70,7 +70,7 @@ Memory::Memory(fstream &romFile, fstream &bootRom)
 
 	PCess = 0;
 
-	while ((romFile.read(&fileReadIn, sizeof(uint8_t))))
+	while ((romFile.read(reinterpret_cast<char*>(&fileReadIn), sizeof(uint8_t))))
 	{
 		this->bootRom[PCess] = fileReadIn;
 		PCess++;
