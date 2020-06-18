@@ -20,10 +20,10 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{CCC2E811-A26B-4070-90CE-7B9504DAB7D1}</ProjectGuid>
+    <ProjectGuid>{8CF97E27-87F5-482A-B742-5B820C0EA8EF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>GameBoyEmulator</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

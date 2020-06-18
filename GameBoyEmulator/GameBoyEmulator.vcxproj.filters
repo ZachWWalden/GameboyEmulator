@@ -21,16 +21,16 @@
     <ClInclude Include="CPU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Register.h">
+    <ClInclude Include="Instruction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Instruction.h">
+    <ClInclude Include="Memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PPU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Memory.h">
+    <ClInclude Include="Register.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -43,10 +43,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ROM.gb">
+    <None Include="bootRom.bin">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="bootRom.bin">
+    <None Include="ROM.gb">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
