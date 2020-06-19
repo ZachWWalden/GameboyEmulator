@@ -15,7 +15,7 @@ private:
 	int CLOCK;
 	Memory* memory;
 	Register A, F, B, C, D, E, H, L;
-	uint16_t programCounter = 0x100, stackPointer;
+	uint16_t programCounter = 0, stackPointer;
 	CpuState cpuState = RUNNING;
 	bool interruptsEnabled = true;
 public:
@@ -4323,12 +4323,15 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 bool CPU::executeCBPrefixInstruction(Instruction instruction, uint16_t &PC, uint8_t* memory, int &cyclesLeft)
 {
 	bool instructionCaught = false;
+	uint8_t reg1 = 0, reg2 = 0, result = 0, msb = 0, lsb = 0;
+	uint16_t reg116 = 0, reg216 = 0, addr = 0;
 	switch (instruction.getOpCode())
 	{
 		// RLC B Length: 2 Cycles 8 Opcode: 0x00 Flags: Z00C
 	case (uint8_t)0x00: instruction.setMnemonic("RLC B");
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+
+		PC++;
 		instructionCaught = true;
 		break;
 		// RLC C Length: 2 Cycles 8 Opcode: 0x01 Flags: Z00C
@@ -4614,51 +4617,141 @@ bool CPU::executeCBPrefixInstruction(Instruction instruction, uint16_t &PC, uint
 		instructionCaught = true;
 		break;
 		// SWAP B Length: 2 Cycles 8 Opcode: 0x30 Flags: Z000
-	case (uint8_t)0x30: instruction.setMnemonic("SWAP B");
+	case (uint8_t)0x30: instruction.setMnemonic("SWAP B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue & 0x0F;
+		reg2 = this->B.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->B.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP C Length: 2 Cycles 8 Opcode: 0x31 Flags: Z000
-	case (uint8_t)0x31: instruction.setMnemonic("SWAP C");
+	case (uint8_t)0x31: instruction.setMnemonic("SWAP C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue & 0x0F;
+		reg2 = this->C.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->C.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP D Length: 2 Cycles 8 Opcode: 0x32 Flags: Z000
-	case (uint8_t)0x32: instruction.setMnemonic("SWAP D");
+	case (uint8_t)0x32: instruction.setMnemonic("SWAP D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue & 0x0F;
+		reg2 = this->D.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->D.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP E Length: 2 Cycles 8 Opcode: 0x33 Flags: Z000
-	case (uint8_t)0x33: instruction.setMnemonic("SWAP E");
+	case (uint8_t)0x33: instruction.setMnemonic("SWAP E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue & 0x0F;
+		reg2 = this->E.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->E.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP H Length: 2 Cycles 8 Opcode: 0x34 Flags: Z000
-	case (uint8_t)0x34: instruction.setMnemonic("SWAP H");
+	case (uint8_t)0x34: instruction.setMnemonic("SWAP H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue & 0x0F;
+		reg2 = this->H.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->H.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP L Length: 2 Cycles 8 Opcode: 0x35 Flags: Z000
-	case (uint8_t)0x35: instruction.setMnemonic("SWAP L");
+	case (uint8_t)0x35: instruction.setMnemonic("SWAP L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue & 0x0F;
+		reg2 = this->L.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->L.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP (HL) Length: 2 Cycles 16 Opcode: 0x36 Flags: Z000
-	case (uint8_t)0x36: instruction.setMnemonic("SWAP (HL)");
+	case (uint8_t)0x36: instruction.setMnemonic("SWAP (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		lsb = this->memory->read(addr);
+		reg1 = lsb & 0x0F;
+		reg2 = lsb & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->memory->write(addr, result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SWAP A Length: 2 Cycles 8 Opcode: 0x37 Flags: Z000
-	case (uint8_t)0x37: instruction.setMnemonic("SWAP A");
+	case (uint8_t)0x37: instruction.setMnemonic("SWAP A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue & 0x0F;
+		reg2 = this->A.getValue & 0xF0;
+		result = ((reg1 >> 4) & 0xF0) | ((reg2 << 4) & 0x0F);
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b10000000);
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SRL B Length: 2 Cycles 8 Opcode: 0x38 Flags: Z00C
@@ -4710,771 +4803,1443 @@ bool CPU::executeCBPrefixInstruction(Instruction instruction, uint16_t &PC, uint
 		instructionCaught = true;
 		break;
 		// BIT 0, B Length: 2 Cycles 8 Opcode: 0x40 Flags: Z01-
-	case (uint8_t)0x40: instruction.setMnemonic("BIT 0, B");
+	case (uint8_t)0x40: instruction.setMnemonic("BIT 0, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if((reg1 & 0x01) == 0x01)
+		{ 
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, C Length: 2 Cycles 8 Opcode: 0x41 Flags: Z01-
-	case (uint8_t)0x41: instruction.setMnemonic("BIT 0, C");
+	case (uint8_t)0x41: instruction.setMnemonic("BIT 0, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, D Length: 2 Cycles 8 Opcode: 0x42 Flags: Z01-
-	case (uint8_t)0x42: instruction.setMnemonic("BIT 0D, D");
+	case (uint8_t)0x42: instruction.setMnemonic("BIT 0D, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, E Length: 2 Cycles 8 Opcode: 0x43 Flags: Z01-
-	case (uint8_t)0x43: instruction.setMnemonic("BIT 0, E");
+	case (uint8_t)0x43: instruction.setMnemonic("BIT 0, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, H Length: 2 Cycles 8 Opcode: 0x44 Flags: Z01-
-	case (uint8_t)0x44: instruction.setMnemonic("BIT 0, H");
+	case (uint8_t)0x44: instruction.setMnemonic("BIT 0, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, L Length: 2 Cycles 8 Opcode: 0x45 Flags: Z01-
-	case (uint8_t)0x45: instruction.setMnemonic("BIT 0, L");
+	case (uint8_t)0x45: instruction.setMnemonic("BIT 0, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, (HL) Length: 2 Cycles 16 Opcode: 0x46 Flags: Z01-
-	case (uint8_t)0x46: instruction.setMnemonic("LD B, (HL)");
+	case (uint8_t)0x46: instruction.setMnemonic("LD B, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 0, A Length: 2 Cycles 8 Opcode: 0x47 Flags: Z01-
-	case (uint8_t)0x47: instruction.setMnemonic("BIT 0, A");
+	case (uint8_t)0x47: instruction.setMnemonic("BIT 0, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x01) == 0x01)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, B Length: 2 Cycles 8 Opcode: 0x48 Flags: Z01-
-	case (uint8_t)0x48: instruction.setMnemonic("BIT 1, B");
+	case (uint8_t)0x48: instruction.setMnemonic("BIT 1, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, C Length: 2 Cycles 8 Opcode: 0x49 Flags: Z01-
-	case (uint8_t)0x49: instruction.setMnemonic("BIT 1, C");
+	case (uint8_t)0x49: instruction.setMnemonic("BIT 1, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, D Length: 2 Cycles 8 Opcode: 0x4A Flags: Z01-
-	case (uint8_t)0x4A: instruction.setMnemonic("BIT 1, D");
+	case (uint8_t)0x4A: instruction.setMnemonic("BIT 1, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, E Length: 2 Cycles 8 Opcode: 0x4B Flags: Z01-
-	case (uint8_t)0x4B: instruction.setMnemonic("BIT 1, E");
+	case (uint8_t)0x4B: instruction.setMnemonic("BIT 1, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, H Length: 2 Cycles 8 Opcode: 0x4C Flags: Z01-
-	case (uint8_t)0x4C: instruction.setMnemonic("BIT 1, H");
+	case (uint8_t)0x4C: instruction.setMnemonic("BIT 1, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, L Length: 2 Cycles 8 Opcode: 0x4D Flags: Z01-
-	case (uint8_t)0x4D: instruction.setMnemonic("BIT 1, L");
+	case (uint8_t)0x4D: instruction.setMnemonic("BIT 1, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, (HL) Length: 2 Cycles 16 Opcode: 0x4E Flags: Z01-
-	case (uint8_t)0x4E: instruction.setMnemonic("BIT 1, (HL)");
+	case (uint8_t)0x4E: instruction.setMnemonic("BIT 1, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 1, A Length: 2 Cycles 8 Opcode: 0x4F Flags: Z01-
-	case (uint8_t)0x4F: instruction.setMnemonic("BIT 1, A");
+	case (uint8_t)0x4F: instruction.setMnemonic("BIT 1, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x02) == 0x02)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, B Length: 2 Cycles 8 Opcode: 0x50 Flags: Z01-
-	case (uint8_t)0x50: instruction.setMnemonic("BIT 2, B");
+	case (uint8_t)0x50: instruction.setMnemonic("BIT 2, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, C Length: 2 Cycles 8 Opcode: 0x51 Flags: Z01-
-	case (uint8_t)0x51: instruction.setMnemonic("BIT 2, C");
+	case (uint8_t)0x51: instruction.setMnemonic("BIT 2, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, D Length: 2 Cycles 8 Opcode: 0x52 Flags: Z01-
-	case (uint8_t)0x52: instruction.setMnemonic("BIT 2, D");
+	case (uint8_t)0x52: instruction.setMnemonic("BIT 2, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;;
 		instructionCaught = true;
 		break;
 		// BIT 2, E Length: 2 Cycles 8 Opcode: 0x53 Flags: Z01-
-	case (uint8_t)0x53: instruction.setMnemonic("BIT 2, E");
+	case (uint8_t)0x53: instruction.setMnemonic("BIT 2, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, H Length: 2 Cycles 8 Opcode: 0x54 Flags: Z01-
-	case (uint8_t)0x54: instruction.setMnemonic("BIT 2, H");
+	case (uint8_t)0x54: instruction.setMnemonic("BIT 2, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, L Length: 2 Cycles 8 Opcode: 0x55 Flags: Z01-
-	case (uint8_t)0x55: instruction.setMnemonic("BIT 2, L");
+	case (uint8_t)0x55: instruction.setMnemonic("BIT 2, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, (HL) Length: 2 Cycles 16 Opcode: 0x56 Flags: Z01-
-	case (uint8_t)0x56: instruction.setMnemonic("BIT 2, (HL)");
+	case (uint8_t)0x56: instruction.setMnemonic("BIT 2, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 2, A Length: 2 Cycles 8 Opcode: 0x57 Flags: Z01-
-	case (uint8_t)0x57: instruction.setMnemonic("LD E, B");
+	case (uint8_t)0x57: instruction.setMnemonic("LD E, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x04) == 0x04)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, B Length: 2 Cycles 8 Opcode: 0x58 Flags: Z01-
-	case (uint8_t)0x58: instruction.setMnemonic("BIT 3, B");
+	case (uint8_t)0x58: instruction.setMnemonic("BIT 3, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, C Length: 2 Cycles 8 Opcode: 0x59 Flags: Z01-
-	case (uint8_t)0x59: instruction.setMnemonic("BIT 3, C");
+	case (uint8_t)0x59: instruction.setMnemonic("BIT 3, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, D Length: 2 Cycles 8 Opcode: 0x5A Flags: Z01-
-	case (uint8_t)0x5A: instruction.setMnemonic("BIT 3, D");
+	case (uint8_t)0x5A: instruction.setMnemonic("BIT 3, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, E Length: 2 Cycles 8 Opcode: 0x5B Flags: Z01-
-	case (uint8_t)0x5B: instruction.setMnemonic("BIT 3, E");
+	case (uint8_t)0x5B: instruction.setMnemonic("BIT 3, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, H Length: 2 Cycles 8 Opcode: 0x5C Flags: Z01-
-	case (uint8_t)0x5C: instruction.setMnemonic("BIT 3, H");
+	case (uint8_t)0x5C: instruction.setMnemonic("BIT 3, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, L Length: 2 Cycles 8 Opcode: 0x5D Flags: Z01-
-	case (uint8_t)0x5D: instruction.setMnemonic("BIT 3, L");
+	case (uint8_t)0x5D: instruction.setMnemonic("BIT 3, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, (HL) Length: 2 Cycles 16 Opcode: 0x5E Flags: Z01-
-	case (uint8_t)0x5E: instruction.setMnemonic("BIT 3, (HL)");
+	case (uint8_t)0x5E: instruction.setMnemonic("BIT 3, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 3, A Length: 2 Cycles 8 Opcode: 0x5F Flags: Z01-
-	case (uint8_t)0x5F: instruction.setMnemonic("BIT 3, A");
+	case (uint8_t)0x5F: instruction.setMnemonic("BIT 3, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x08) == 0x08)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, B Length: 2 Cycles 8 Opcode: 0x60 Flags: Z01-
-	case (uint8_t)0x60: instruction.setMnemonic("BIT 4, B");
+	case (uint8_t)0x60: instruction.setMnemonic("BIT 4, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, C Length: 2 Cycles 8 Opcode: 0x61 Flags: Z01-
-	case (uint8_t)0x61: instruction.setMnemonic("BIT 4, C");
+	case (uint8_t)0x61: instruction.setMnemonic("BIT 4, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, D Length: 2 Cycles 8 Opcode: 0x62 Flags: Z01-
-	case (uint8_t)0x62: instruction.setMnemonic("BIT 4, D");
+	case (uint8_t)0x62: instruction.setMnemonic("BIT 4, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, E Length: 2 Cycles 8 Opcode: 0x63 Flags: Z01-
-	case (uint8_t)0x63: instruction.setMnemonic("BIT 4, E");
+	case (uint8_t)0x63: instruction.setMnemonic("BIT 4, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, H Length: 2 Cycles 8 Opcode: 0x64 Flags: Z01-
-	case (uint8_t)0x64: instruction.setMnemonic("BIT 4, H");
+	case (uint8_t)0x64: instruction.setMnemonic("BIT 4, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, L Length: 2 Cycles 8 Opcode: 0x65 Flags: Z01-
-	case (uint8_t)0x65: instruction.setMnemonic("BIT 4, L");
+	case (uint8_t)0x65: instruction.setMnemonic("BIT 4, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, (HL) Length: 2 Cycles 16 Opcode: 0x66 Flags: Z01-
-	case (uint8_t)0x66: instruction.setMnemonic("BIT 4, (HL)");
+	case (uint8_t)0x66: instruction.setMnemonic("BIT 4, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 4, A Length: 2 Cycles 8 Opcode: 0x67 Flags: Z01-
-	case (uint8_t)0x67: instruction.setMnemonic("BIT 4, A");
+	case (uint8_t)0x67: instruction.setMnemonic("BIT 4, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x10) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, B Length: 2 Cycles 8 Opcode: 0x68 Flags: Z01-
-	case (uint8_t)0x68: instruction.setMnemonic("LD L, B");
+	case (uint8_t)0x68: instruction.setMnemonic("BIT 5, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, C Length: 2 Cycles 8 Opcode: 0x69 Flags: Z01-
-	case (uint8_t)0x69: instruction.setMnemonic("BIT 5, C");
+	case (uint8_t)0x69: instruction.setMnemonic("BIT 5, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, D Length: 2 Cycles 8 Opcode: 0x6A Flags: Z01-
-	case (uint8_t)0x6A: instruction.setMnemonic("BIT 5, D");
+	case (uint8_t)0x6A: instruction.setMnemonic("BIT 5, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, E Length: 2 Cycles 8 Opcode: 0x6B Flags: Z01-
-	case (uint8_t)0x6B: instruction.setMnemonic("BIT 5, E");
+	case (uint8_t)0x6B: instruction.setMnemonic("BIT 5, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, H Length: 2 Cycles 8 Opcode: 0x6C Flags: Z01-
-	case (uint8_t)0x6C: instruction.setMnemonic("BIT 5, H");
+	case (uint8_t)0x6C: instruction.setMnemonic("BIT 5, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, L Length: 2 Cycles 8 Opcode: 0x6D Flags: Z01-
-	case (uint8_t)0x6D: instruction.setMnemonic("BIT 5, L");
+	case (uint8_t)0x6D: instruction.setMnemonic("BIT 5, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, (HL) Length: 2 Cycles 8 Opcode: 0x6E Flags: Z01-
-	case (uint8_t)0x6E: instruction.setMnemonic("BIT 5, (HL)");
+	case (uint8_t)0x6E: instruction.setMnemonic("BIT 5, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 5, A Length: 2 Cycles 8 Opcode: 0x6F Flags: Z01-
-	case (uint8_t)0x6F: instruction.setMnemonic("BIT 5, A");
+	case (uint8_t)0x6F: instruction.setMnemonic("BIT 5, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x20) == 0x20)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, B Length: 2 Cycles 8 Opcode: 0x70 Flags: Z01-
-	case (uint8_t)0x70: instruction.setMnemonic("LD (HL), B");
+	case (uint8_t)0x70: instruction.setMnemonic("LD (HL), B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, C Length: 2 Cycles 8 Opcode: 0x71 Flags: Z01-
-	case (uint8_t)0x71: instruction.setMnemonic("BIT 6, C");
+	case (uint8_t)0x71: instruction.setMnemonic("BIT 6, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, D Length: 2 Cycles 8 Opcode: 0x72 Flags: Z01-
-	case (uint8_t)0x72: instruction.setMnemonic("BIT 6, D");
+	case (uint8_t)0x72: instruction.setMnemonic("BIT 6, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, E Length: 2 Cycles 8 Opcode: 0x73 Flags: Z01-
-	case (uint8_t)0x73: instruction.setMnemonic("BIT 6, E");
+	case (uint8_t)0x73: instruction.setMnemonic("BIT 6, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, H Length: 2 Cycles 8 Opcode: 0x74 Flags: Z01-
-	case (uint8_t)0x74: instruction.setMnemonic("BIT 6, H");
+	case (uint8_t)0x74: instruction.setMnemonic("BIT 6, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, L Length: 2 Cycles 16 Opcode: 0x75 Flags: Z01-
-	case (uint8_t)0x75: instruction.setMnemonic("BIT 6, L");
+	case (uint8_t)0x75: instruction.setMnemonic("BIT 6, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, (HL) Length: 2 Cycles 16 Opcode: 0x76 Flags: Z01-
-	case (uint8_t)0x76: instruction.setMnemonic("BIT 6, (HL)");
+	case (uint8_t)0x76: instruction.setMnemonic("BIT 6, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 6, A Length: 2 Cycles 8 Opcode: 0x77 Flags: Z01-
-	case (uint8_t)0x77: instruction.setMnemonic("BIT 6, A");
+	case (uint8_t)0x77: instruction.setMnemonic("BIT 6, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x40) == 0x40)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, B Length: 2 Cycles 8 Opcode: 0x78 Flags: Z01-
-	case (uint8_t)0x78: instruction.setMnemonic("BIT 7, B");
+	case (uint8_t)0x78: instruction.setMnemonic("BIT 7, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->B.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, C Length: 2 Cycles 8 Opcode: 0x79 Flags: Z01-
-	case (uint8_t)0x79: instruction.setMnemonic("BIT 7, C");
+	case (uint8_t)0x79: instruction.setMnemonic("BIT 7, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, D Length: 2 Cycles 8 Opcode: 0x7A Flags: Z01-
-	case (uint8_t)0x7A: instruction.setMnemonic("BIT 7, D");
+	case (uint8_t)0x7A: instruction.setMnemonic("BIT 7, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->D.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, E Length: 2 Cycles 8 Opcode: 0x7B Flags: Z01-
-	case (uint8_t)0x7B: instruction.setMnemonic("BIT 7, E");
+	case (uint8_t)0x7B: instruction.setMnemonic("BIT 7, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->E.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, H Length: 2 Cycles 8 Opcode: 0x7C Flags: Z01-
-	case (uint8_t)0x7C: instruction.setMnemonic("BIT 7, H");
+	case (uint8_t)0x7C: instruction.setMnemonic("BIT 7, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->H.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, L Length: 2 Cycles 8 Opcode: 0x7D Flags: Z01-
-	case (uint8_t)0x7D: instruction.setMnemonic("BIT 7, L");
+	case (uint8_t)0x7D: instruction.setMnemonic("BIT 7, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->L.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, (HL) Length: 2 Cycles 16 Opcode: 0x7E Flags: Z01-
-	case (uint8_t)0x7E: instruction.setMnemonic("BIT 7, (HL)");
+	case (uint8_t)0x7E: instruction.setMnemonic("BIT 7, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// BIT 7, A Length: 2 Cycles 8 Opcode: 0x7F Flags: Z01-
-	case (uint8_t)0x7F: instruction.setMnemonic("BIT 7, A");
+	case (uint8_t)0x7F: instruction.setMnemonic("BIT 7, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->A.getValue();
+		if ((reg1 & 0x80) == 0x80)
+		{
+			this->F.setValue(this->F.getValue() & 0b00110000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10110000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, B Length: 2 Cycles 8 Opcode: 0x80 Flags: ----
-	case (uint8_t)0x80: instruction.setMnemonic("RES 0, B");
+	case (uint8_t)0x80: instruction.setMnemonic("RES 0, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, C Length: 2 Cycles 8 Opcode: 0x81 Flags: ----
-	case (uint8_t)0x81: instruction.setMnemonic("RES 0, C");
+	case (uint8_t)0x81: instruction.setMnemonic("RES 0, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, D Length: 2 Cycles 8 Opcode: 0x82 Flags: ----
-	case (uint8_t)0x82: instruction.setMnemonic("RES 0, D");
+	case (uint8_t)0x82: instruction.setMnemonic("RES 0, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, E Length: 2 Cycles 8 Opcode: 0x83 Flags: ----
 	case (uint8_t)0x83: instruction.setMnemonic("RES 0, E");
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, H Length: 2 Cycles 8 Opcode: 0x84 Flags: ----
-	case (uint8_t)0x84: instruction.setMnemonic("RES 0, H");
+	case (uint8_t)0x84: instruction.setMnemonic("RES 0, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, L Length: 2 Cycles 8 Opcode: 0x85 Flags: ----
-	case (uint8_t)0x85: instruction.setMnemonic("RES 0, L");
+	case (uint8_t)0x85: instruction.setMnemonic("RES 0, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, (HL) Length: 2 Cycles 16 Opcode: 0x86 Flags: ----
-	case (uint8_t)0x86: instruction.setMnemonic("RES 0, (HL)");
+	case (uint8_t)0x86: instruction.setMnemonic("RES 0, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b11111110;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 0, A Length: 2 Cycles 8 Opcode: 0x87 Flags: ----
-	case (uint8_t)0x87: instruction.setMnemonic("RES 0, A");
+	case (uint8_t)0x87: instruction.setMnemonic("RES 0, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b11111110);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, B Length: 2 Cycles 8 Opcode: 0x88 Flags: ----
-	case (uint8_t)0x88: instruction.setMnemonic("RES 1, B");
+	case (uint8_t)0x88: instruction.setMnemonic("RES 1, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, C Length: 2 Cycles 8 Opcode: 0x89 Flags: ----
-	case (uint8_t)0x89: instruction.setMnemonic("RES 1, C");
+	case (uint8_t)0x89: instruction.setMnemonic("RES 1, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, D Length: 2 Cycles 8 Opcode: 0x8A Flags: ----
-	case (uint8_t)0x8A: instruction.setMnemonic("RES 1, D");
+	case (uint8_t)0x8A: instruction.setMnemonic("RES 1, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, E Length: 2 Cycles 8 Opcode: 0x8B Flags: ----
-	case (uint8_t)0x8B: instruction.setMnemonic("RES 1, E");
+	case (uint8_t)0x8B: instruction.setMnemonic("RES 1, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, H Length: 2 Cycles 8 Opcode: 0x8C Flags: ----
-	case (uint8_t)0x8C: instruction.setMnemonic("RES 1, H");
+	case (uint8_t)0x8C: instruction.setMnemonic("RES 1, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, L Length: 2 Cycles 8 Opcode: 0x8D Flags: ----
-	case (uint8_t)0x8D: instruction.setMnemonic("RES 1, L");
+	case (uint8_t)0x8D: instruction.setMnemonic("RES 1, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, (HL) Length: 2 Cycles 8 Opcode: 0x8E Flags: ----
-	case (uint8_t)0x8E: instruction.setMnemonic("RES 1, (HL)");
+	case (uint8_t)0x8E: instruction.setMnemonic("RES 1, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b11111101;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 1, A Length: 2 Cycles 8 Opcode: 0x8F Flags: ----
-	case (uint8_t)0x8F: instruction.setMnemonic("RES 1, A");
+	case (uint8_t)0x8F: instruction.setMnemonic("RES 1, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b11111101);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, B Length: 2 Cycles 8 Opcode: 0x90 Flags: ----
-	case (uint8_t)0x90: instruction.setMnemonic("RES 2, B");
+	case (uint8_t)0x90: instruction.setMnemonic("RES 2, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, C Length: 2 Cycles 8 Opcode: 0x91 Flags: ----
-	case (uint8_t)0x91: instruction.setMnemonic("RES 2, C");
+	case (uint8_t)0x91: instruction.setMnemonic("RES 2, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, D Length: 2 Cycles 8 Opcode: 0x92 Flags: ----
-	case (uint8_t)0x92: instruction.setMnemonic("RES 2, D");
+	case (uint8_t)0x92: instruction.setMnemonic("RES 2, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, E Length: 2 Cycles 8 Opcode: 0x93 Flags: ----
-	case (uint8_t)0x93: instruction.setMnemonic("RES 2, E");
+	case (uint8_t)0x93: instruction.setMnemonic("RES 2, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, H Length: 2 Cycles 8 Opcode: 0x94 Flags: ----
-	case (uint8_t)0x94: instruction.setMnemonic("RES 2, H");
+	case (uint8_t)0x94: instruction.setMnemonic("RES 2, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, L Length: 2 Cycles 8 Opcode: 0x95 Flags: ----
-	case (uint8_t)0x95: instruction.setMnemonic("RES 2, L");
+	case (uint8_t)0x95: instruction.setMnemonic("RES 2, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, (HL) Length: 2 Cycles 16 Opcode: 0x96 Flags: ----
-	case (uint8_t)0x96: instruction.setMnemonic("RES 2, (HL)");
+	case (uint8_t)0x96: instruction.setMnemonic("RES 2, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b11111011;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 2, A Length: 2 Cycles 8 Opcode: 0x97 Flags: ----
 	case (uint8_t)0x97: instruction.setMnemonic("RES 2, A");
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b11111011);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, B Length: 2 Cycles 8 Opcode: 0x98 Flags: ----
-	case (uint8_t)0x98: instruction.setMnemonic("RES 3, B");
+	case (uint8_t)0x98: instruction.setMnemonic("RES 3, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, C Length: 2 Cycles 8 Opcode: 0x99 Flags: ----
-	case (uint8_t)0x99: instruction.setMnemonic("RES 3, C");
+	case (uint8_t)0x99: instruction.setMnemonic("RES 3, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, D Length: 2 Cycles 8 Opcode: 0x9A Flags: ----
-	case (uint8_t)0x9A: instruction.setMnemonic("RES 3, D");
+	case (uint8_t)0x9A: instruction.setMnemonic("RES 3, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, E Length: 2 Cycles 8 Opcode: 0x9B Flags: ----
-	case (uint8_t)0x9B: instruction.setMnemonic("RES 3, E");
+	case (uint8_t)0x9B: instruction.setMnemonic("RES 3, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, H Length: 2 Cycles 8 Opcode: 0x9C Flags: ----
-	case (uint8_t)0x9C: instruction.setMnemonic("RES 3, H");
+	case (uint8_t)0x9C: instruction.setMnemonic("RES 3, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, L Length: 2 Cycles 8 Opcode: 0x9D Flags: ----
-	case (uint8_t)0x9D: instruction.setMnemonic("RES 3, L");
+	case (uint8_t)0x9D: instruction.setMnemonic("RES 3, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, (HL) Length: 2 Cycles 16 Opcode: 0x9E Flags: ----
-	case (uint8_t)0x9E: instruction.setMnemonic("RES 3, (HL)");
+	case (uint8_t)0x9E: instruction.setMnemonic("RES 3, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b11110111;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 3, A Length: 2 Cycles 8 Opcode: 0x9F Flags: ----
-	case (uint8_t)0x9F: instruction.setMnemonic("RES 3, A");
+	case (uint8_t)0x9F: instruction.setMnemonic("RES 3, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b11110111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, B Length: 2 Cycles 8 Opcode: 0xA0 Flags: ----
-	case (uint8_t)0xA0: instruction.setMnemonic("RES 4, B");
+	case (uint8_t)0xA0: instruction.setMnemonic("RES 4, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, C Length: 2 Cycles 8 Opcode: 0xA1 Flags: ----
-	case (uint8_t)0xA1: instruction.setMnemonic("RES 4, C");
+	case (uint8_t)0xA1: instruction.setMnemonic("RES 4, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, D Length: 2 Cycles 8 Opcode: 0xA2 Flags: ----
-	case (uint8_t)0xA2: instruction.setMnemonic("RES 4, D");
+	case (uint8_t)0xA2: instruction.setMnemonic("RES 4, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, E Length: 2 Cycles 8 Opcode: 0xA3 Flags: ----
-	case (uint8_t)0xA3: instruction.setMnemonic("RES 4, E");
+	case (uint8_t)0xA3: instruction.setMnemonic("RES 4, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, H Length: 2 Cycles 8 Opcode: 0xA4 Flags: ----
-	case (uint8_t)0xA4: instruction.setMnemonic("RES 4, H");
+	case (uint8_t)0xA4: instruction.setMnemonic("RES 4, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, L Length: 2 Cycles 8 Opcode: 0xA5 Flags: ----
-	case (uint8_t)0xA5: instruction.setMnemonic("RES 4, L");
+	case (uint8_t)0xA5: instruction.setMnemonic("RES 4, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, (HL) Length: 2 Cycles 8 Opcode: 0xA6 Flags: ----
-	case (uint8_t)0xA6: instruction.setMnemonic("RES 4, (HL)");
+	case (uint8_t)0xA6: instruction.setMnemonic("RES 4, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b11101111;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 4, A Length: 2 Cycles 8 Opcode: 0xA7 Flags: ----
-	case (uint8_t)0xA7: instruction.setMnemonic("RES 4, A");
+	case (uint8_t)0xA7: instruction.setMnemonic("RES 4, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b11101111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, B Length: 2 Cycles 8 Opcode: 0xA8 Flags: ----
-	case (uint8_t)0xA8: instruction.setMnemonic("RES 5, B");
+	case (uint8_t)0xA8: instruction.setMnemonic("RES 5, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, C Length: 2 Cycles 8 Opcode: 0xA9 Flags: ----
-	case (uint8_t)0xA9: instruction.setMnemonic("RES 5, C");
+	case (uint8_t)0xA9: instruction.setMnemonic("RES 5, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, D Length: 2 Cycles 8 Opcode: 0xAA Flags: ----
-	case (uint8_t)0xAA: instruction.setMnemonic("RES 5, D");
+	case (uint8_t)0xAA: instruction.setMnemonic("RES 5, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, E Length: 2 Cycles 8 Opcode: 0xAB Flags: ----
-	case (uint8_t)0xAB: instruction.setMnemonic("RES 5, E");
+	case (uint8_t)0xAB: instruction.setMnemonic("RES 5, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, H Length: 2 Cycles 8 Opcode: 0xAC Flags: ----
-	case (uint8_t)0xAC: instruction.setMnemonic("RES 5, H");
+	case (uint8_t)0xAC: instruction.setMnemonic("RES 5, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, L Length: 2 Cycles 8 Opcode: 0xAD Flags: ----
-	case (uint8_t)0xAD: instruction.setMnemonic("RES 5, L");
+	case (uint8_t)0xAD: instruction.setMnemonic("RES 5, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, (HL) Length: 2 Cycles 8 Opcode: 0xAE Flags: ----
-	case (uint8_t)0xAE: instruction.setMnemonic("RES 5, (HL)");
+	case (uint8_t)0xAE: instruction.setMnemonic("RES 5, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b11011111;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 5, A Length: 2 Cycles 8 Opcode: 0xAF Flags: ----
-	case (uint8_t)0xAF: instruction.setMnemonic("RES 5, A");
+	case (uint8_t)0xAF: instruction.setMnemonic("RES 5, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b11011111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, B Length: 2 Cycles 8 Opcode: 0xB0 Flags: ----
-	case (uint8_t)0xB0: instruction.setMnemonic("RES 6, B");
+	case (uint8_t)0xB0: instruction.setMnemonic("RES 6, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, C Length: 2 Cycles 8 Opcode: 0xB1 Flags: ----
-	case (uint8_t)0xB1: instruction.setMnemonic("RES 6, C");
+	case (uint8_t)0xB1: instruction.setMnemonic("RES 6, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, D Length: 2 Cycles 8 Opcode: 0xB2 Flags: ----
-	case (uint8_t)0xB2: instruction.setMnemonic("RES 6, D");
+	case (uint8_t)0xB2: instruction.setMnemonic("RES 6, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, E Length: 2 Cycles 8 Opcode: 0xB3 Flags: ----
-	case (uint8_t)0xB3: instruction.setMnemonic("RES 6, E");
+	case (uint8_t)0xB3: instruction.setMnemonic("RES 6, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, H Length: 2 Cycles 8 Opcode: 0xB4 Flags: ----
-	case (uint8_t)0xB4: instruction.setMnemonic("RES 6, H");
+	case (uint8_t)0xB4: instruction.setMnemonic("RES 6, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, L Length: 2 Cycles 8 Opcode: 0xB5 Flags: ----
-	case (uint8_t)0xB5: instruction.setMnemonic("RES 6, L");
+	case (uint8_t)0xB5: instruction.setMnemonic("RES 6, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, (HL) Length: 2 Cycles 16 Opcode: 0xB6 Flags: ----
-	case (uint8_t)0xB6: instruction.setMnemonic("RES 6, (HL)");
+	case (uint8_t)0xB6: instruction.setMnemonic("RES 6, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b10111111;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 6, A Length: 2 Cycles 8 Opcode: 0xB7 Flags: ----
-	case (uint8_t)0xB7: instruction.setMnemonic("RES 6, A");
+	case (uint8_t)0xB7: instruction.setMnemonic("RES 6, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b10111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, B Length: 2 Cycles 8 Opcode: 0xB8 Flags: ----
-	case (uint8_t)0xB8: instruction.setMnemonic("RES 7, B");
+	case (uint8_t)0xB8: instruction.setMnemonic("RES 7, B");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->B.setValue(this->B.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, C Length: 2 Cycles 8 Opcode: 0xB9 Flags: ----
-	case (uint8_t)0xB9: instruction.setMnemonic("RES 7, C");
+	case (uint8_t)0xB9: instruction.setMnemonic("RES 7, C");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->C.setValue(this->C.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, D Length: 2 Cycles 8 Opcode: 0xBA Flags: ----
-	case (uint8_t)0xBA: instruction.setMnemonic("RES 7, D");
+	case (uint8_t)0xBA: instruction.setMnemonic("RES 7, D");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->D.setValue(this->D.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, E Length: 2 Cycles 8 Opcode: 0xBB Flags: ----
-	case (uint8_t)0xBB: instruction.setMnemonic("RES 7, E");
+	case (uint8_t)0xBB: instruction.setMnemonic("RES 7, E");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->E.setValue(this->E.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, H Length: 2 Cycles 8 Opcode: 0xBC Flags: ----
-	case (uint8_t)0xBC: instruction.setMnemonic("RES 7, H");
+	case (uint8_t)0xBC: instruction.setMnemonic("RES 7, H");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->H.setValue(this->H.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, L Length: 2 Cycles 8 Opcode: 0xBD Flags: ----
-	case (uint8_t)0xBD: instruction.setMnemonic("RES 7, L");
+	case (uint8_t)0xBD: instruction.setMnemonic("RES 7, L");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->L.setValue(this->L.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, (HL) Length: 2 Cycles 16 Opcode: 0xBE Flags: ----
-	case (uint8_t)0xBE: instruction.setMnemonic("RES 7, (HL)");
+	case (uint8_t)0xBE: instruction.setMnemonic("RES 7, (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		addr = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		reg1 = this->memory->read(addr);
+		reg1 = reg1 & 0b01111111;
+		this->memory->write(addr, reg1);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RES 7, A Length: 2 Cycles 8 Opcode: 0xBF Flags: ----
-	case (uint8_t)0xBF: instruction.setMnemonic("RES 7, A");
+	case (uint8_t)0xBF: instruction.setMnemonic("RES 7, A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->A.setValue(this->A.getValue() & 0b01111111);
+		PC++;
 		instructionCaught = true;
 		break;
 		// SET 0, B Length: 2 Cycles 8 Opcode: 0xC0 Flags: ----
