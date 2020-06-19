@@ -17,6 +17,7 @@ private:
 	Register A, F, B, C, D, E, H, L;
 	uint16_t programCounter = 0x100, stackPointer;
 	CpuState cpuState = RUNNING;
+	bool interruptsEnabled = true;
 public:
 	//Methods
 	bool executeInstruction(Instruction instructionToExecute, uint16_t &PC, uint8_t nextOpCode, uint8_t* memory, int &cyclesLeft);
@@ -27,6 +28,8 @@ public:
 	void stepCPU();
 	void setCpuState(CpuState newState);
 	CpuState getCpuState();
+	bool getInteruptStatus();
+	void setInteruptStatus(bool newIntStatus);
 };
 
 CPU::CPU(Memory* memPtr, int clock)
@@ -34,7 +37,14 @@ CPU::CPU(Memory* memPtr, int clock)
 	this->memory = memPtr;
 	this->CLOCK = clock;
 }
-
+bool CPU::getInteruptStatus()
+{
+	return this->interruptsEnabled;
+}
+void CPU::setInteruptStatus(bool newIntStatus)
+{
+	this->interruptsEnabled = newIntStatus;
+}
 void CPU::stepCPU()
 {
 	//execute boot rom
@@ -71,8 +81,9 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 	{
 		// NOP Length: 1 Cycles 1 Opcode: 0x00 Flags: ----
 	case (uint8_t)0x00: instruction.setMnemonic("NOP");// DONE
-	{cout << instruction.getMnemonic() << endl;
-	instructionCaught = true; }
+		cout << instruction.getMnemonic() << endl;
+		PC++;
+		instructionCaught = true; 
 		break;
 		// LD BC d16 Length: 3 Cycles 12 Opcode: 0x01 Flags: ----
 	case (uint8_t)0x01: instruction.setMnemonic("LD BC d16");// DONE
@@ -295,6 +306,7 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 			this->F.setValue(this->F.getValue() & 0b01110000);
 		//reset sub and half carry
 		this->F.setValue(this->F.getValue() & 0b10010000);
+		PC++;
 		instructionCaught = true;
 		break;
 		// STOP 0 Length: 2 Cycles 4 Opcode: 0x10 Flags: ----
@@ -3454,8 +3466,8 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		if ((this->F.getValue() & 0x80) == 0x00)
 		{
-			addr = ((this->memory->read(stackPointer - 1) >> 8) & 0xFF00) | (this->memory->read(stackPointer) & 0x00FF);
-			PC = addr;
+			PC = ((this->memory->read(stackPointer + 1) >> 8) & 0xFF00) | (this->memory->read(stackPointer) & 0x00FF);
+			stackPointer += 2;
 		}
 		else
 		{
@@ -3465,10 +3477,10 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		// POP BC Length: 1 Cycles 12 Opcode: 0xC1 Flags: ----
 	case (uint8_t)0xC1: instruction.setMnemonic("POP BC");//DONE
 		cout << instruction.getMnemonic() << endl;
-		reg1 = ((this->memory->read(stackPointer - 1) >> 8) & 0xFF00) | (this->memory->read(stackPointer) & 0x00FF);
-		this->B.setValue((reg1 & 0xFF00) << 8);
-		this->C.setValue(reg1 & 0x00FF);
-		stackPointer -= 2;
+		reg116 = ((this->memory->read(stackPointer + 1) >> 8) & 0xFF00) | (this->memory->read(stackPointer) & 0x00FF);
+		this->B.setValue((reg116 & 0xFF00) << 8);
+		this->C.setValue(reg116 & 0x00FF);
+		stackPointer += 2;
 		PC++;
 		instructionCaught = true;
 		break;
@@ -3478,7 +3490,7 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		PC++;
 		if ((this->F.getValue() & 0x80) == 0x00)
 		{
-			PC = (((this->memory->read(PC)) >> 8) & 0xFF00 | ((PC + 1) & 0x00FF));
+			PC = (((this->memory->read(PC + 1)) >> 8) & 0xFF00 | ((PC) & 0x00FF));
 		}
 		else
 		{
@@ -3490,7 +3502,7 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 	case (uint8_t)0xC3: instruction.setMnemonic("JP a16");//DONE
 		cout << instruction.getMnemonic() << endl;
 		PC++;
-		PC = (((this->memory->read(PC)) >> 8) & 0xFF00 | ((PC + 1) & 0x00FF));
+		PC = (((this->memory->read(PC + 1)) >> 8) & 0xFF00 | ((PC) & 0x00FF));
 		instructionCaught = true;
 		break;
 		// CALL NZ, a16 Length: 3 Cycles 24/12 Opcode: 0xC4 Flags: ----
@@ -3500,9 +3512,9 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		if ((this->F.getValue() & 0x80) == 0x00)
 		{
 			//push return address to stack
-			stackPointer++;
+			stackPointer--;
 			this->memory->write(stackPointer, (PC & 0xFF00) << 8);
-			stackPointer++;
+			stackPointer--;
 			this->memory->write(stackPointer, (PC & 0x00FF));
 			//jump to called function
 			PC = (((this->memory->read(PC)) >> 8) & 0xFF00 | ((PC + 1) & 0x00FF));
@@ -3516,9 +3528,9 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		// PUSH BC Length: 1 Cycles 16 Opcode: 0xC5 Flags: ----
 	case (uint8_t)0xC5: instruction.setMnemonic("PUSH BC");//DONE
 		cout << instruction.getMnemonic() << endl;
-		stackPointer++;
+		stackPointer--;
 		this->memory->write(stackPointer, this->B.getValue());
-		stackPointer++;
+		stackPointer--;
 		this->memory->write(stackPointer, this->C.getValue());
 		PC++;
 		instructionCaught = true;
@@ -3564,10 +3576,11 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 	case (uint8_t)0xC7: instruction.setMnemonic("RST 00H");//DONE
 		cout << instruction.getMnemonic() << endl;
 		//push PC onto Stack
-		stackPointer++;
-		this->memory->write(stackPointer, (PC & 0xFF00) << 8);
-		stackPointer++;
-		this->memory->write(stackPointer, (PC & 0x00FF));
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
 		PC = 0x0000;
 		instructionCaught = true;
 		break;
@@ -3577,8 +3590,8 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		if (this->F.getValue() & 0x80 == 0x80)
 		{
 			//pop address from stack
-			PC = ((this->memory->read(stackPointer - 1) & 0xFF00) >> 8) | (this->memory->read(stackPointer) & 0x00FF);
-			stackPointer -= 2;
+			PC = ((this->memory->read(stackPointer + 1) & 0xFF00) >> 8) | (this->memory->read(stackPointer) & 0x00FF);
+			stackPointer += 2;
 		}
 		else
 			PC++;
@@ -3588,8 +3601,8 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 	case (uint8_t)0xC9: instruction.setMnemonic("RET");//DONE
 		cout << instruction.getMnemonic() << endl;
 		//pop address from stack
-		PC = ((this->memory->read(stackPointer - 1) & 0xFF00) >> 8) | (this->memory->read(stackPointer) & 0x00FF);
-		stackPointer -= 2;
+		PC = ((this->memory->read(stackPointer + 1) & 0xFF00) >> 8) | (this->memory->read(stackPointer) & 0x00FF);
+		stackPointer += 2;
 		instructionCaught = true;
 		break;
 		// JP Z, a16 Length: 3 Cycles 16/12 Opcode: 0xCA Flags: ----
@@ -3598,9 +3611,7 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		PC++;
 		if (this->F.getValue() & 0x80 == 0x80)
 		{
-			//pop address from stack
-			PC = ((this->memory->read(PC) & 0xFF00) >> 8) | (this->memory->read(PC + 1) & 0x00FF);
-			stackPointer -= 2;
+			PC = ((this->memory->read(PC + 1) & 0xFF00) >> 8) | (this->memory->read(PC) & 0x00FF);
 		}
 		else
 			PC += 2;
@@ -3614,42 +3625,127 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = executeCBPrefixInstruction(instructionPrefix, PC, memory, cyclesLeft);
 		break;
 		// CALL Z, a16 Length: 3 Cycles 16/12 Opcode: 0xCC Flags: ----
-	case (uint8_t)0xCC: instruction.setMnemonic("CALL Z, a16");
+	case (uint8_t)0xCC: instruction.setMnemonic("CALL Z, a16");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		if ((this->F.getValue() & 0x80) == 0x80)
+		{
+			//push return address to stack
+			stackPointer--;
+			this->memory->write(stackPointer, (PC & 0xFF00) << 8);
+			stackPointer--;
+			this->memory->write(stackPointer, (PC & 0x00FF));
+			//jump to called function
+			PC = (((this->memory->read(PC + 1)) >> 8) & 0xFF00 | ((PC) & 0x00FF));
+		}
+		else
+		{
+			PC += 2;
+		}
 		instructionCaught = true;
 		break;
 		// CALL a16 Length: 3 Cycles 16/12 Opcode: 0xCD Flags: ----
-	case (uint8_t)0xCD: instruction.setMnemonic("CALL a16");
+	case (uint8_t)0xCD: instruction.setMnemonic("CALL a16");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		//push return address to stack
+		stackPointer--;
+		this->memory->write(stackPointer, (PC & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (PC & 0x00FF));
+		//jump to called function
+		PC = (((this->memory->read(PC + 1)) >> 8) & 0xFF00 | ((PC) & 0x00FF));
 		instructionCaught = true;
 		break;
-		// ADC A, d8 Length: 2 Cycles 8 Opcode: 0xCE Flags: ----
-	case (uint8_t)0xCE: instruction.setMnemonic("ADC A, d8");
+		// ADC A, d8 Length: 2 Cycles 8 Opcode: 0xCE Flags: Z0HC
+	case (uint8_t)0xCE: instruction.setMnemonic("ADC A, d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->A.getValue(), reg2 = this->memory->read(PC);
+		lsb = ((this->F.getValue() & 0b00010000) == 0x10);
+		//check half carry
+		if (((reg1 & 0xF) + (reg2 & 0xF) + (lsb & 0xF)) == 0x10)
+		{
+			this->F.setValue(this->F.getValue() | 0b00100000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() & 0b11010000);
+		}
+		//check carry
+		if (((reg1 & 0xFF) + (reg2 & 0xFF) + (lsb & 0xFF)) == 0x100)
+		{
+			this->F.setValue(this->F.getValue() | 0b00010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() & 0b11100000);
+		}
+		//add
+		result = reg1 + reg2 + lsb;
+		//check zero
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b01110000);
+		//store
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RST 08H Length: 1 Cycles 16 Opcode: 0xCF Flags: ----
-	case (uint8_t)0xCF: instruction.setMnemonic("RST 08H");
+	case (uint8_t)0xCF: instruction.setMnemonic("RST 08H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		//push PC onto Stack
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0008;
 		instructionCaught = true;
 		break;
 		// RET NC Length: 1 Cycles 20/8 Opcode: 0xD0 Flags: ----
-	case (uint8_t)0xD0: instruction.setMnemonic("RET NC");
+	case (uint8_t)0xD0: instruction.setMnemonic("RET NC");//DONE
 		cout << instruction.getMnemonic() << endl;
+		if ((this->F.getValue() & 0x10) == 0x00)
+		{
+			//pop return address from stack pointer
+			PC = (this->memory->read(stackPointer + 1) >> 8) & 0xFF00 | (this->memory->read(stackPointer) & 0x00FF);
+			//adjust Stack Pointer
+			stackPointer += 2;
+		}
+		else
+		{
+			PC++;
+		}
 		instructionCaught = true;
 		break;
 		// POP DE Length: 1 Cycles 12 Opcode: 0xD1 Flags: ----
-	case (uint8_t)0xD1: instruction.setMnemonic("POP DE");
+	case (uint8_t)0xD1: instruction.setMnemonic("POP DE");//DONE
 		cout << instruction.getMnemonic() << endl;
+		this->E.setValue(this->memory->read(stackPointer));
+		stackPointer++;
+		this->D.setValue(this->memory->read(stackPointer));
+		stackPointer++;
+		PC++;
 		instructionCaught = true;
 		break;
 		// JP NC, a16 Length: 3 Cycles 16/12 Opcode: 0xD2 Flags: ----
-	case (uint8_t)0xD2: instruction.setMnemonic("RET NC");
+	case (uint8_t)0xD2: instruction.setMnemonic("JP NC, a16");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		if ((this->F.getValue() & 0x10) == 0x00)
+		{
+			//jump
+			PC = (this->memory->read(PC + 1) >> 8) & 0xFF00 | (this->memory->read(PC) & 0x00FF);
+		}
+		else
+		{
+			PC++;
+		}
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3657,41 +3753,127 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// CALL NC, a16 Length: 3 Cycles 24/12 Opcode: 0xD4 Flags: ----
-	case (uint8_t)0xD4: instruction.setMnemonic("CALL NC, a16");
+	case (uint8_t)0xD4: instruction.setMnemonic("CALL NC, a16");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		if ((this->F.getValue() & 0x10) == 0x00)
+		{
+			//push address of next instruction to stack
+			reg116 = PC + 2;
+			stackPointer--;
+			this->memory->write(stackPointer, (reg116 & 0xFF00) >> 8);
+			stackPointer--;
+			this->memory->write(stackPointer, (reg116 & 0x00FF));
+			//Jump to immeadiate address
+			PC = (this->memory->read(PC + 1) >> 8) & 0xFF00 | (this->memory->read(PC) & 0x00FF);
+			
+		}
+		else
+		{
+			PC += 2;
+		}
 		instructionCaught = true;
 		break;
 		// PUSH DE Length: 1 Cycles 16 Opcode: 0xD5 Flags: ----
-	case (uint8_t)0xD5: instruction.setMnemonic("PUSH DE");
+	case (uint8_t)0xD5: instruction.setMnemonic("PUSH DE");//DONE
 		cout << instruction.getMnemonic() << endl;
+		stackPointer--;
+		this->memory->write(stackPointer, this->D.getValue());
+		stackPointer--;
+		this->memory->write(stackPointer, this->E.getValue());
+		PC++;
 		instructionCaught = true;
 		break;
-		// ADD A, d8 Length: 2 Cycles 8 Opcode: 0xD6 Flags: Z0HC
-	case (uint8_t)0xD6: instruction.setMnemonic("ADD A, d8");
+		// SUB d8 Length: 2 Cycles 8 Opcode: 0xD6 Flags: Z1HC
+	case (uint8_t)0xD6: instruction.setMnemonic("SUB d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->A.getValue(), reg2 = this->memory->read(PC);
+		//check half carry for borrow
+		if ((reg1 & 0xF) - (reg2 & 0xF) < 0)
+		{
+			this->F.setValue(this->F.getValue() & 0b11010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() | 0b00100000);
+		}
+		//check carry
+		if (((reg1 & 0xFF) - (reg2 & 0xFF)) < 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b00010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() & 0b11100000);
+		}
+		//add
+		result = reg1 - reg2;
+		//check zero
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b01110000);
+		//set sub flag
+		this->F.setValue(this->F.getValue() | 0b01000000);
+		//store
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RST 10H Length: 1 Cycles 16 Opcode: 0xD7 Flags: ----
-	case (uint8_t)0xD7: instruction.setMnemonic("RST 10H");
+	case (uint8_t)0xD7: instruction.setMnemonic("RST 10H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		//push PC onto Stack
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0010;
 		instructionCaught = true;
 		break;
 		// RET C Length: 1 Cycles 20/8 Opcode: 0xD8 Flags: ----
 	case (uint8_t)0xD8: instruction.setMnemonic("RET C");
 		cout << instruction.getMnemonic() << endl;
+		if ((this->F.getValue() & 0x10) == 0x10)
+		{
+			//pop address of next instruction from stack
+			//Jump to immeadiate address
+			PC = (this->memory->read(stackPointer + 1) >> 8) & 0xFF00 | (this->memory->read(stackPointer) & 0x00FF);
+			stackPointer += 2;
+
+		}
+		else
+		{
+			PC++;
+		}
 		instructionCaught = true;
 		break;
 		// RET I Length: 1 Cycles 16 Opcode: 0xD9 Flags: ----
-	case (uint8_t)0xD9: instruction.setMnemonic("RET I");
+	case (uint8_t)0xD9: instruction.setMnemonic("RET I");//DONE
 		cout << instruction.getMnemonic() << endl;
+		this->setInteruptStatus(true);
+		PC = (this->memory->read(stackPointer + 1) >> 8) & 0xFF00 | (this->memory->read(stackPointer) & 0x00FF);
+		stackPointer += 2;
+		PC++;
 		instructionCaught = true;
 		break;
 		// JP C, a16 Length: 3 Cycles 16/12 Opcode: 0xDA Flags: ----
-	case (uint8_t)0xDA: instruction.setMnemonic("JP C, a16");
+	case (uint8_t)0xDA: instruction.setMnemonic("JP C, a16");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		if ((this->F.getValue() & 0x10) == 0x10)
+		{
+			//Jump to immeadiate address
+			PC = (this->memory->read(PC + 1) >> 8) & 0xFF00 | (this->memory->read(PC) & 0x00FF);
+		}
+		else
+		{
+			PC += 2;
+		}
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3699,9 +3881,24 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// CALL C, a16 Length: 3 Cycles 24/12 Opcode: 0xDC Flags: ----
-	case (uint8_t)0xDC: instruction.setMnemonic("CALL C, a16");
+	case (uint8_t)0xDC: instruction.setMnemonic("CALL C, a16");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		if ((this->F.getValue() & 0x10) == 0x10)
+		{
+			//push address of the next instructiont to the program counter
+			reg116 = PC + 2;
+			stackPointer--;
+			this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+			stackPointer--;
+			this->memory->write(stackPointer, (reg116 & 0x00FF));
+			//Jump to immeadiate address
+			PC = (this->memory->read(PC + 1) >> 8) & 0xFF00 | (this->memory->read(PC) & 0x00FF);
+		}
+		else
+		{
+			PC += 2;
+		}
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3709,31 +3906,80 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// SBC A, d8 Length: 2 Cycles 8 Opcode: 0xDE Flags: Z1HC
-	case (uint8_t)0xDE: instruction.setMnemonic("SBC A, d8");
+	case (uint8_t)0xDE: instruction.setMnemonic("SBC A, d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->A.getValue(), reg2 = this->memory->read(PC);
+		lsb = (this->F.getValue() & 0b00010000 == 0x10);
+		//check half carry for borrow
+		if ((reg1 & 0xF) - ((reg2 & 0xF) + (lsb & 0xF)) < 0)
+		{
+			this->F.setValue(this->F.getValue() & 0b11010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() | 0b00100000);
+		}
+		//check carry
+		if (((reg1 & 0xFF) - ((reg2 & 0xFF) + (lsb & 0xFF)) < 0))
+		{
+			this->F.setValue(this->F.getValue() | 0b00010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() & 0b11100000);
+		}
+		//add
+		result = reg1 - reg2 - lsb;
+		//check zero
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b01110000);
+		//set sub flag
+		this->F.setValue(this->F.getValue() | 0b01000000);
+		//store
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RST 18H Length: 1 Cycles 16 Opcode: 0xDF Flags: ----
-	case (uint8_t)0xDF: instruction.setMnemonic("RST 18H");
+	case (uint8_t)0xDF: instruction.setMnemonic("RST 18H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0018;
 		instructionCaught = true;
 		break;
 		// LDH (a8), A Length: 2 Cycles 12 Opcode: 0xE0 Flags: ----
-	case (uint8_t)0xE0: instruction.setMnemonic("LDA (a8), A");
+	case (uint8_t)0xE0: instruction.setMnemonic("LDA (a8), A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		this->memory->write((0xFF00 | (reg1 & 0x00FF)), this->A.getValue());
+		PC++;
 		instructionCaught = true;
 		break;
 		// POP HL Length: 1 Cycles 12 Opcode: 0xE1 Flags: ----
-	case (uint8_t)0xE1: instruction.setMnemonic("POP HL");
+	case (uint8_t)0xE1: instruction.setMnemonic("POP HL");//DONE
 		cout << instruction.getMnemonic() << endl;
+		this->L.setValue(this->memory->read(stackPointer));
+		stackPointer++;
+		this->H.setValue(this->memory->read(stackPointer));
+		stackPointer++;
+		PC++;
 		instructionCaught = true;
 		break;
-		// LDH (C), A Length: 2 Cycles 8 Opcode: 0xE2 Flags: ----
-	case (uint8_t)0xE2: instruction.setMnemonic("LDA (C), A");
+		// LD (C), A Length: 1 Cycles 8 Opcode: 0xE2 Flags: ----
+	case (uint8_t)0xE2: instruction.setMnemonic("LDA (C), A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		this->memory->write((0xFF00 | (this->C.getValue() & 0x00FF)), this->A.getValue());
+		PC++;
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3745,36 +3991,92 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// PUSH HL Length: 1 Cycles 16 Opcode: 0xE5 Flags: ----
-	case (uint8_t)0xE5: instruction.setMnemonic("PUSH HL");
+	case (uint8_t)0xE5: instruction.setMnemonic("PUSH HL");//DONE
 		cout << instruction.getMnemonic() << endl;
+		stackPointer--;
+		this->memory->write(stackPointer, this->H.getValue());
+		stackPointer--;
+		this->memory->write(stackPointer, this->L.getValue());
+		PC++;
 		instructionCaught = true;
 		break;
-		// AND d8 Length: 2 Cycles 8 Opcode: 0xE6 Flags: ----
-	case (uint8_t)0xE6: instruction.setMnemonic("AND d8");
+		// AND d8 Length: 2 Cycles 8 Opcode: 0xE6 Flags: Z010
+	case (uint8_t)0xE6: instruction.setMnemonic("AND d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		result = this->A.getValue() & reg1;
+		//check flags
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() | 0b00100000);
+		this->F.setValue(this->F.getValue() & 0b10100000);
+		//store result
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RST 20H Length: 1 Cycles 16 Opcode: 0xE7 Flags: ----
-	case (uint8_t)0xE7: instruction.setMnemonic("RST 20H");
+	case (uint8_t)0xE7: instruction.setMnemonic("RST 20H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0020;
 		instructionCaught = true;
 		break;
-		// ADD PC, r8 Length: 2 Cycles 16 Opcode: 0xE8 Flags: 00HC
-	case (uint8_t)0xE8: instruction.setMnemonic("ADD PC, r8");
+		// ADD SP, r8 Length: 2 Cycles 16 Opcode: 0xE8 Flags: 00HC
+	case (uint8_t)0xE8: instruction.setMnemonic("ADD SP, r8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		//sign extend immediate
+		if ((reg1 & 0x80) == 0x10)
+		{
+			reg116 = 0xFF00 | (reg1 & 0x00FF);
+		}
+		else
+			reg116 = 0x0000 | (reg1 & 0x00FF);
+		//check half carry
+		if (((stackPointer & 0xFF) + (reg116 & 0xFF)) == 0x100)
+		{
+			this->F.setValue(this->F.getValue() | 0b00100000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b11010000);
+		//Check Carry
+		if (((stackPointer & 0xFFFF) + (reg116 & 0xFFFF)) == 0x10000)
+		{
+			this->F.setValue(this->F.getValue() | 0b00010000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b11100000);
+		//Set zero and sub flag
+		this->F.setValue(this->F.getValue() & 0b00110000);
+		//perform addition
+		stackPointer += reg116;
+		PC++;
 		instructionCaught = true;
 		break;
 		// JP (HL) Length: 1 Cycles 4 Opcode: 0xE9 Flags: ----
-	case (uint8_t)0xE9: instruction.setMnemonic("JP (HL)");
+	case (uint8_t)0xE9: instruction.setMnemonic("JP (HL)");//DONE
 		cout << instruction.getMnemonic() << endl;
+		PC = (this->H.getValue() >> 8) & 0xFF00 | (this->L.getValue() & 0x00FF);
 		instructionCaught = true;
 		break;
 		// LD (a16), A Length: 3 Cycles 16 Opcode: 0xEA Flags: ----
-	case (uint8_t)0xEA: instruction.setMnemonic("LD (a16), A");
+	case (uint8_t)0xEA: instruction.setMnemonic("LD (a16), A");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		addr = (this->memory->read(PC + 1) >> 8) & 0xFF00 | (this->memory->read(PC) & 0x00FF);
+		this->memory->write(addr, this->A.getValue());
+		PC += 2;
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3790,36 +4092,69 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// XOR d8 Length: 2 Cycles 8 Opcode: 0xEE Flags: Z000
-	case (uint8_t)0xEE: instruction.setMnemonic("XOR d8");
+	case (uint8_t)0xEE: instruction.setMnemonic("XOR d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		result = this->A.getValue() ^ reg1;
+		//check flags
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() | 0b00000000);
+		this->F.setValue(this->F.getValue() & 0b10000000);
+		//store result
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RST 28H Length: 1 Cycles 16 Opcode: 0xEF Flags: ----
-	case (uint8_t)0xEF: instruction.setMnemonic("RST 28H");
+	case (uint8_t)0xEF: instruction.setMnemonic("RST 28H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0028;
 		instructionCaught = true;
 		break;
-		// LDH (a8), A Length: 2 Cycles 12 Opcode: 0xF0 Flags: ----
-	case (uint8_t)0xF0: instruction.setMnemonic("LDH (a8), A");
+		// LDH A, (a8) Length: 2 Cycles 12 Opcode: 0xF0 Flags: ----
+	case (uint8_t)0xF0: instruction.setMnemonic("LDH A, (a8)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		addr = 0xFF00 | (reg1 & 0x00FF);
+		this->A.setValue(this->memory->read(addr));
+		PC++;
 		instructionCaught = true;
 		break;
 		// POP AF Length: 1 Cycles 12 Opcode: 0xF1 Flags: ZNHC
-	case (uint8_t)0xF1: instruction.setMnemonic("POP AF");
+	case (uint8_t)0xF1: instruction.setMnemonic("POP AF");//DONE
 		cout << instruction.getMnemonic() << endl;
+		this->F.setValue(this->memory->read(stackPointer));
+		stackPointer++;
+		this->A.setValue(this->memory->read(stackPointer));
+		stackPointer++;
+		PC++;
 		instructionCaught = true;
 		break;
 		// LD A, (C) Length: 2 Cycles 8 Opcode: 0xF2 Flags: ----
-	case (uint8_t)0xF2: instruction.setMnemonic("LD A, (C)");
+	case (uint8_t)0xF2: instruction.setMnemonic("LD A, (C)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		reg1 = this->C.getValue();
+		addr = 0xFF00 | (reg1 & 0x00FF);
+		this->A.setValue(this->memory->read(addr));
+		PC++;
 		instructionCaught = true;
 		break;
 		// DI Length: 1 Cycles 4 Opcode: 0xF3 Flags: ----
-	case (uint8_t)0xF3: instruction.setMnemonic("DI");
+	case (uint8_t)0xF3: instruction.setMnemonic("DI");//DONE
 		cout << instruction.getMnemonic() << endl;
+		this->setInteruptStatus(false);
+		PC++;
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3827,41 +4162,98 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// PUSH AF Length: 1 Cycles 16 Opcode: 0xF5 Flags: ----
-	case (uint8_t)0xF5: instruction.setMnemonic("PUSH AF");
+	case (uint8_t)0xF5: instruction.setMnemonic("PUSH AF");//DONE
 		cout << instruction.getMnemonic() << endl;
+		stackPointer--;
+		this->memory->write(stackPointer, this->A.getValue());
+		stackPointer--;
+		this->memory->write(stackPointer, this->F.getValue());
+		PC++;
 		instructionCaught = true;
 		break;
 		// OR d8 Length: 2 Cycles 8 Opcode: 0xF6 Flags: Z000
-	case (uint8_t)0xF6: instruction.setMnemonic("OR d8");
+	case (uint8_t)0xF6: instruction.setMnemonic("OR d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		result = this->A.getValue() | reg1;
+		if (result == 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b00000000);
+		this->F.setValue(this->F.getValue() & 0b10000000);
+		this->A.setValue(result);
+		PC++;
 		instructionCaught = true;
 		break;
 		// RST 30H Length: 1 Cycles 16 Opcode: 0xF7 Flags: ----
-	case (uint8_t)0xF7: instruction.setMnemonic("RST 30H");
+	case (uint8_t)0xF7: instruction.setMnemonic("RST 30H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0030;
 		instructionCaught = true;
 		break;
-		// LD HL, PC+r8 Length: 2 Cycles 12 Opcode: 0xF8 Flags: 00HC
-	case (uint8_t)0xF8: instruction.setMnemonic("LD HL, PC+r8");
+		// LD HL, SP + r8 Length: 2 Cycles 12 Opcode: 0xF8 Flags: 00HC
+	case (uint8_t)0xF8: instruction.setMnemonic("LD HL, PC+r8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->memory->read(PC);
+		//sign extend immediate
+		if ((reg1 & 0x80) == 0x10)
+		{
+			reg116 = 0xFF00 | (reg1 & 0x00FF);
+		}
+		else
+			reg116 = 0x0000 | (reg1 & 0x00FF);
+		//check half carry
+		if (((stackPointer & 0xFF) + (reg116 & 0xFF)) == 0x100)
+		{
+			this->F.setValue(this->F.getValue() | 0b00100000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b11010000);
+		//Check Carry
+		if (((stackPointer & 0xFFFF) + (reg116 & 0xFFFF)) == 0x10000)
+		{
+			this->F.setValue(this->F.getValue() | 0b00010000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b11100000);
+		//Set zero and sub flag
+		this->F.setValue(this->F.getValue() & 0b00110000);
+		reg216 = stackPointer + reg116;
+		this->H.setValue((reg216 & 0xFF00) << 8);
+		this->L.setValue(reg216 & 0x00FF);
+		PC++;
 		instructionCaught = true;
 		break;
-		// LD PC, HL Length: 1 Cycles 8 Opcode: 0xF9 Flags: ----
-	case (uint8_t)0xF9: instruction.setMnemonic("LD PC, HL");
+		// LD SP, HL Length: 1 Cycles 8 Opcode: 0xF9 Flags: ----
+	case (uint8_t)0xF9: instruction.setMnemonic("LD SP, HL");//DONE
 		cout << instruction.getMnemonic() << endl;
+		stackPointer = ((this->H.getValue() >> 8) & 0xFF00) | (this->L.getValue() & 0x00FF);
+		PC++;
 		instructionCaught = true;
 		break;
 		// LD A, (a16) Length: 3 Cycles 16 Opcode: 0xFA Flags: ----
-	case (uint8_t)0xFA: instruction.setMnemonic("LD A, (a16)");
+	case (uint8_t)0xFA: instruction.setMnemonic("LD A, (a16)");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 2;
+		PC++;
+		addr = ((this->memory->read(PC + 1) >> 8) & 0xFF00) | (this->memory->read(PC) & 0x00FF);
+		this->A.setValue(this->memory->read(addr));
+		PC += 2;
 		instructionCaught = true;
 		break;
 		// EI Length: 1 Cycles 4 Opcode: 0xFB Flags: ----
-	case (uint8_t)0xFB: instruction.setMnemonic("EI");
+	case (uint8_t)0xFB: instruction.setMnemonic("EI");//DONE
 		cout << instruction.getMnemonic() << endl;
+		this->setInteruptStatus(true);
+		PC++;
 		instructionCaught = true;
 		break;
 		// UNUSED
@@ -3873,14 +4265,52 @@ bool CPU::executeInstruction(Instruction instruction, uint16_t &PC, uint8_t next
 		instructionCaught = true;
 		break;
 		// CP d8 Length: 2 Cycles 8 Opcode: 0xFE Flags: Z1HC
-	case (uint8_t)0xFE: instruction.setMnemonic("CP d8");
+	case (uint8_t)0xFE: instruction.setMnemonic("CP d8");//DONE
 		cout << instruction.getMnemonic() << endl;
-		PC = PC + 1;
+		PC++;
+		reg1 = this->A.getValue(), reg2 = this->memory->read(PC);
+		//check half carry for borrow
+		if ((reg1 & 0xF) - (reg2 & 0xF) < 0)
+		{
+			this->F.setValue(this->F.getValue() & 0b11010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() | 0b00100000);
+		}
+		//check carry
+		if (((reg1 & 0xFF) - (reg2 & 0xFF)) < 0)
+		{
+			this->F.setValue(this->F.getValue() | 0b00010000);
+		}
+		else
+		{
+			this->F.setValue(this->F.getValue() & 0b11100000);
+		}
+		//check zero
+		if (reg1 == reg2)
+		{
+			this->F.setValue(this->F.getValue() | 0b10000000);
+		}
+		else
+			this->F.setValue(this->F.getValue() & 0b01110000);
+		//set sub flag
+		this->F.setValue(this->F.getValue() | 0b01000000);
+		//store
+		this->A.setValue(result);
+		PC++;
+		PC++;
 		instructionCaught = true;
 		break;
 		//  RST 38H Length: 1 Cycles: 16 Opcode: 0xFF Flags: ----
-	case (uint8_t)0xFF: instruction.setMnemonic("RST 38H");
+	case (uint8_t)0xFF: instruction.setMnemonic("RST 38H");//DONE
 		cout << instruction.getMnemonic() << endl;
+		reg116 = PC + 1;
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0xFF00) << 8);
+		stackPointer--;
+		this->memory->write(stackPointer, (reg116 & 0x00FF));
+		PC = 0x0038;
 		instructionCaught = true;
 		break;
 	}
